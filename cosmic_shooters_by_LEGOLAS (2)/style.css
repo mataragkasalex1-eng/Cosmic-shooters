@@ -1,0 +1,653 @@
+body {
+  margin: 0;
+  background-color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #ffffff;
+}
+
+/* Menu overlay */
+#menu {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.75));
+  /* bring the menu overlay in front of the canvas and other UI */
+  z-index: 200;
+}
+
+.menu-card {
+  position: relative; /* allow internal HUD to position top-right without overlapping other elements */
+  width: min(420px, 90vw);
+  padding: 44px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(18,18,20,0.95), rgba(10,10,12,0.9));
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 2px 6px rgba(255,255,255,0.03) inset;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.06);
+  overflow: visible; /* allow positioned children like Save/Load to be fully visible */
+}
+
+/* small HUD inside the menu card to display Score and SC without overlapping other content */
+.menu-hud {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  background: rgba(255,255,255,0.02);
+  padding: 6px 10px;
+  border-radius: 8px;
+  min-width: 86px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.03);
+}
+.menu-hud-line {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.menu-hud-label {
+  font-size: 12px;
+  color: #dfe6ff;
+  opacity: 0.9;
+}
+.menu-hud-value {
+  font-weight: 700;
+  color: #ffd86b;
+  font-size: 13px;
+}
+
+.menu-highscore {
+  font-size: 14px;
+  color: #ffdca6;
+  margin-bottom: 8px;
+  background: rgba(255,255,255,0.04);
+  padding: 8px 10px;
+  border-radius: 8px;
+  display: inline-block;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.45);
+}
+.menu-card h1 {
+  margin: 0 0 8px 0;
+  font-size: 32px;
+  letter-spacing: 0.6px;
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+}
+
+.menu-card .subtitle {
+  margin: 0 0 18px 0;
+  color: #dfe6ff;
+  opacity: 0.85;
+  font-size: 14px;
+}
+
+.menu-card .hint {
+  margin-top: 14px;
+  color: #b9c1d9;
+  font-size: 13px;
+}
+
+/* Buttons */
+.menu-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.btn {
+  min-width: 110px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  color: #e6eefc;
+  background: rgba(255,255,255,0.04);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+
+.btn:hover { transform: translateY(-3px); }
+
+.btn.primary {
+  /* Start buttons: green to match the in-game Resume/positive action color */
+  background: linear-gradient(180deg, #7BE495 0%, #4CC67A 100%);
+  color: #052814;
+  font-weight: 600;
+  box-shadow: 0 8px 30px rgba(76,198,122,0.22);
+}
+
+/* Main-menu How to Play button: blue to match the in-game How button */
+#howBtn {
+  background: linear-gradient(180deg, #2fd1ff 0%, #1bb0e6 100%);
+  color: #022032;
+  font-weight: 600;
+  box-shadow: 0 8px 30px rgba(27,176,230,0.18);
+}
+
+/* Upgrades button (yellow) */
+.btn.upgrades, #upgradesBtn {
+  background: linear-gradient(180deg, #ffd86b 0%, #ffc107 100%);
+  color: #2b1900;
+  font-weight: 700;
+  box-shadow: 0 8px 30px rgba(255,200,60,0.16);
+}
+
+/* Position Save and Load as separate top-center buttons (side-by-side), higher to avoid overlap */
+#saveBtn {
+  position: absolute;
+  top: -54px; /* move higher so the button is fully visible above the card */
+  left: 50%;
+  /* shift left so Save sits left of center */
+  transform: translateX(-110px);
+  z-index: 320;
+  min-width: 88px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  color: #eef6ff;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  overflow: visible;
+}
+
+#loadBtn {
+  position: absolute;
+  top: -54px; /* move higher to match Save and avoid clipping */
+  left: 50%;
+  /* shift right so Load sits beside Save and they don't overlap */
+  transform: translateX(10px);
+  z-index: 320;
+  min-width: 88px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  color: #eef6ff;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  overflow: visible;
+}
+
+/* Slight vertical offset for the in-card HUD so it doesn't overlap the title */
+.menu-card .menu-hud {
+  top: 12px;
+}
+
+canvas {
+  border: 2px solid white;
+  background-color: #000010;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  z-index: 10;
+  position: relative;
+
+  /* Keep the canvas larger but responsive so it never overflows the viewport */
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 40px);
+  width: auto;
+  height: auto;
+  display: block;
+  margin: 0;
+}
+
+/* Modal for How to Play */
+.modal {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  /* raise modal above the main menu overlay so it appears in front */
+  z-index: 400;
+  background: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.75));
+}
+
+.modal[aria-hidden="false"] {
+  display: flex;
+}
+
+/* ensure the modal-card can contain an absolutely positioned close button */
+.modal-card {
+  position: relative;
+  width: min(520px, 92vw);
+  max-height: 80vh;
+  overflow: auto;
+  padding: 22px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(20,20,22,0.98), rgba(12,12,14,0.95));
+  box-shadow: 0 14px 40px rgba(0,0,0,0.6);
+  text-align: left;
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #eef6ff;
+}
+
+/* top-right close button inside modal */
+#closeHow {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  min-width: auto;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  color: #eef6ff;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+}
+#closeHow:hover { transform: translateY(-2px); }
+
+.modal-card h2 {
+  margin: 0 0 10px 0;
+  font-size: 20px;
+  color: #fff;
+}
+
+.modal-body p, .modal-body ul {
+  margin: 6px 0 12px 0;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.modal-body ul {
+  padding-left: 18px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+/* Ensure the Close button is touch-friendly */
+#closeHow.btn {
+  min-width: 120px;
+  padding: 12px 16px;
+}
+
+/* Modal for Settings shares the same base as .modal; add specific small styles */
+/* Make the SFX checkbox visually blue when checked and sized for touch */
+.settings-toggle {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 44px;
+  height: 26px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.08);
+  position: relative;
+  outline: none;
+  cursor: pointer;
+  transition: background .18s ease;
+  vertical-align: middle;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.03);
+}
+.settings-toggle::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform .18s ease;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+}
+/* checked state: blue background and move the knob */
+.settings-toggle:checked {
+  background: linear-gradient(180deg, #2fd1ff 0%, #1bb0e6 100%);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.02);
+}
+.settings-toggle:checked::after {
+  transform: translateX(18px);
+}
+
+/* Labels: make both labels clearly visible (light color). The "On" label gets higher contrast when checked */
+.sfx-label {
+  color: #eef6ff;
+  font-size: 14px;
+  user-select: none;
+}
+/* When checked, give the "On" label an even stronger contrast (optional visual hint) */
+.on-label {
+  transition: color .12s ease;
+}
+.settings-toggle:checked ~ .on-label,
+.on-label:focus {
+  color: #ffffff;
+}
+
+/* Pause menu (vertical layout with a horizontal action row) */
+.pause-modal {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  /* ensure the pause overlay appears above the main menu and canvas */
+  z-index: 1000;
+  background: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.75));
+}
+
+.pause-modal[aria-hidden="false"] {
+  display: flex;
+}
+
+.pause-card {
+  width: min(360px, 92vw);
+  padding: 18px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(24,24,26,0.98), rgba(12,12,14,0.96));
+  box-shadow: 0 14px 40px rgba(0,0,0,0.6);
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #eef6ff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.pause-card h2 {
+  margin: 0;
+  font-size: 20px;
+  text-align: center;
+}
+
+/* A short descriptive line inside the vertical list */
+.pause-list .pause-note {
+  margin: 8px 0;
+  color: #cfe6ff;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Main vertical action area */
+.pause-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  align-items: center;
+}
+
+/* Horizontal row for quick actions (Resume + Quit) */
+.pause-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: 6px;
+}
+
+/* Make the resume button slightly more prominent and touch-friendly */
+.pause-row .btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px 10px;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+}
+
+/* Explicit pause menu button colors: How to Play = blue, Resume = green-ish, Quit = red */
+#pauseHowBtn {
+  background: linear-gradient(180deg, #2fd1ff 0%, #1bb0e6 100%);
+  color: #022032;
+  box-shadow: 0 8px 24px rgba(27,176,230,0.18);
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  width: 84%;
+  padding: 12px 14px;
+}
+#pauseHowBtn:hover { transform: translateY(-3px); }
+
+#pauseResumeBtn {
+  background: linear-gradient(180deg, #7BE495 0%, #4CC67A 100%);
+  color: #052814;
+  box-shadow: 0 8px 24px rgba(76,198,122,0.14);
+  border: none;
+}
+#pauseResumeBtn:hover { transform: translateY(-3px); }
+
+#pauseQuitBtn {
+  background: linear-gradient(180deg, #ff6b6b 0%, #e04b4b 100%);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(224,75,75,0.18);
+  border: none;
+}
+#pauseQuitBtn:hover { transform: translateY(-3px); }
+
+/* Upgrades modal improvements: prevent elements from touching and ensure buttons are touch friendly */
+#upgradesModal .modal-body { display: block; gap: 12px; max-height: 52vh; overflow-y: auto; padding-right: 6px; }
+#upgradesModal input[type="number"] { margin: 6px 0; }
+#upgradesModal .btn { min-height: 40px; }
+
+/* Shield row tweaks for better spacing */
+#shieldIconBtn { padding: 6px; border-radius: 10px; }
+#shieldBuyBtn { cursor: pointer; }
+
+/* Full-body shield icon: styled yellow circle to match in-game cover (56x56) */
+.full-shield-icon {
+  display: inline-block;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  /* create a transparent center to match the in-game visual */
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 36%),
+    radial-gradient(circle at 35% 30%, #fff3c6 36%, #ffd86b 55%, #ffcd3b 78%, #f9b800 100%);
+  box-shadow: 0 4px 10px rgba(255, 200, 80, 0.25), inset 0 -6px 12px rgba(0,0,0,0.08);
+  image-rendering: pixelated;
+  vertical-align: middle;
+  border: 1px solid rgba(255, 215, 120, 0.22);
+}
+
+/* Make modal paragraphs and lists breathe a bit more */
+.modal-body p, .modal-body ul { margin-bottom: 12px; line-height: 1.5; }
+
+/* Ensure the small in-card HUD inside main menu doesn't overlap content on small widths */
+.menu-hud { min-width: 96px; padding: 8px 12px; gap: 8px; }
+
+/* Encyclopedia (book-style) modal styles */
+.encyclopedia-card {
+  /* warm paper background, soft spine shadow and an inner page gutter to read like a real book */
+  background: linear-gradient(180deg,#fbf7ee 0%,#f3ead3 100%);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.55), inset -12px 0 30px rgba(0,0,0,0.03);
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.06);
+  padding: 18px;
+}
+
+/* each book-page looks like a paper page with subtle texture, inner margin and slight fold */
+.book-page {
+  background: linear-gradient(180deg,#fffef8 0%,#f9f6ec 100%);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.6);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 6px;
+  padding: 16px;
+  min-height: 300px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* visual gutter between left and right pages for a realistic open-book feel */
+#encyPages {
+  gap: 18px;
+  align-items: stretch;
+}
+
+/* slight page curl on the inner edges */
+#encyPageLeft::after,
+#encyPageRight::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(0,0,0,0.02), rgba(0,0,0,0));
+}
+#encyPageLeft::after { right: -6px; transform: skewX(-6deg); opacity: 0.6; }
+#encyPageRight::after { left: -6px; transform: skewX(6deg); opacity: 0.6; }
+
+/* keep enemy icons intact but give them a framed look */
+.book-page img {
+  display: block;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.06);
+  background: rgba(255,255,255,0.6);
+  padding: 6px;
+  width: 120px;
+  height: 120px;
+  image-rendering: pixelated;
+}
+
+/* typography adjustments for book feel */
+.encyclopedia-card h2, .book-page h3 {
+  color: #2b2b2b;
+  margin-top: 0;
+  font-family: "Georgia", "Times New Roman", serif;
+}
+.book-page p, .book-page div {
+  color: #2b2b2b;
+  font-family: "Georgia", "serif";
+  line-height: 1.45;
+}
+#encycleopediaBtn {} /* reserved for future overrides */
+
+/* Provide safe min-width for upgrade info to avoid label/button overlap */
+#upgradesModal .modal-card div[style*="flex:1"] { min-width: 0; }
+
+/* Ship modal upgrade list items */
+.upgrade-item {
+  color: #2b2b2b;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.02);
+}
+/* Owned/purchased upgrades display in green for clarity */
+.upgrade-item.owned {
+  color: #052814;
+  background: linear-gradient(180deg, #7BE495 0%, #4CC67A 100%);
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(76,198,122,0.12);
+}
+
+/* Ship modal: structured upgrade rows (icon + info + status) */
+.upgrade-item-row { box-sizing: border-box; }
+
+/* Achievements button (green) kept consistent with primary positive style */
+#achievementsBtn {
+  min-width: 140px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  color: #052814;
+  background: linear-gradient(180deg, #7BE495 0%, #4CC67A 100%);
+  font-weight: 700;
+  box-shadow: 0 8px 30px rgba(76,198,122,0.18);
+}
+#achievementsBtn:hover { transform: translateY(-3px); }
+
+/* Achievements modal adjustments: distinct warm yellow book-like panel for visibility */
+#achievementsModal .modal-card {
+  color: #000000;
+  background: linear-gradient(180deg,#fff5cc 0%,#ffef99 100%);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+#achievementsModal .modal-body {
+  font-size: 14px;
+  line-height: 1.45;
+  color: #000000;
+}
+
+/* small icon box for upgrades */
+.upgrade-item-row img { display:block; }
+
+/* Bought status pill */
+.upgrade-item-row .status-pill {
+  font-weight: 700;
+  color: #076a2f;
+  background: rgba(123,228,149,0.12);
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+/* Visual style for claimed achievements: blue pill with white text */
+.status-pill.claimed {
+  color: #ffffff !important;
+  background: linear-gradient(180deg,#2fd1ff 0%,#1bb0e6 100%) !important;
+  box-shadow: 0 6px 18px rgba(27,176,230,0.12);
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+}
+
+/* Theme: light mode overrides when body[data-theme="light"] is set */
+body[data-theme="light"] {
+  background-color: #ffffff;
+  color: #0a0a0a;
+}
+
+/* Make menu/card backgrounds readable on light theme */
+body[data-theme="light"] .menu-card,
+body[data-theme="light"] .modal-card,
+body[data-theme="light"] .pause-card,
+body[data-theme="light"] .encyclopedia-card {
+  background: linear-gradient(180deg, #ffffff, #f2f2f2);
+  color: #0b0b0b;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+}
+
+/* Modal inner text contrast */
+body[data-theme="light"] .modal-body,
+body[data-theme="light"] .book-page {
+  color: #0b0b0b;
+}
+
+/* Buttons: invert to darker style for light theme for legibility */
+body[data-theme="light"] .btn {
+  background: rgba(0,0,0,0.06);
+  color: #0b0b0b;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+body[data-theme="light"] .btn.primary {
+  background: linear-gradient(180deg, #4cc67a 0%, #2fa15a 100%);
+  color: #ffffff;
+}
+
+/* Canvas border visibility on light background */
+body[data-theme="light"] canvas {
+  border: 2px solid #222;
+  box-shadow: 0 0 20px rgba(0,0,0,0.08);
+}
+
+/* Achievements modal contrast tweak */
+body[data-theme="light"] #achievementsModal .modal-card {
+  background: linear-gradient(180deg,#fffaf0 0%,#fff3d9 100%);
+  color: #0b0b0b;
+}

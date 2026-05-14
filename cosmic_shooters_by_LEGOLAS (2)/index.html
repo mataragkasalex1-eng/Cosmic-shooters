@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cosmic Shooters</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="menu">
+      <div class="menu-card">
+        <!-- top-right HUD for Score / SC to avoid overlap with other menu content -->
+        <div class="menu-hud" aria-hidden="false">
+          <div class="menu-hud-line"><span class="menu-hud-label">Points</span><span id="menuScore" class="menu-hud-value">0</span></div>
+          <div class="menu-hud-line"><span class="menu-hud-label">SC</span><span id="menuSC" class="menu-hud-value">0</span></div>
+          <div class="menu-hud-line" title="App version"><span class="menu-hud-label">Version</span><span id="menuVersion" class="menu-hud-value">v0.4.2.2</span></div>
+        </div>
+
+        <!-- Devtools quick button (password-protected) -->
+        <div id="devtoolsQuick" style="position:fixed;top:10px;right:12px;display:flex;flex-direction:column;gap:6px;align-items:flex-end;z-index:2000;">
+          <button id="devtoolsBtn" class="btn" style="min-width:28px;height:28px;padding:4px;border-radius:6px;background:#000;color:#000;font-weight:800;cursor:pointer;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,0.6);">Dev</button>
+        </div>
+
+        <!-- Devtools Modal (password gate + panel to add SC) -->
+        <div id="devtoolsModal" class="modal" aria-hidden="true" style="z-index:1500;">
+          <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="devtoolsTitle" style="max-width:420px;">
+            <h2 id="devtoolsTitle">Developer Tools</h2>
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
+              <div id="devPassWrap" style="display:block;">
+                <label style="color:#cfe6ff;font-size:13px;">Enter password to unlock dev tools:</label>
+                <input id="devPassword" type="password" autocomplete="off" placeholder="password..." style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#eef6ff;" />
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px;">
+                  <button id="devPassConfirm" type="button" class="btn primary" style="min-width:86px;padding:6px 10px;">Unlock</button>
+                  <button id="devPassClose" class="btn">Close</button>
+                </div>
+              </div>
+
+              <div id="devPanel" style="display:none;">
+                <label style="color:#cfe6ff;font-size:13px;">Grant SC (space coins)</label>
+                <input id="devGrantSC" type="number" min="0" value="100" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#eef6ff;" />
+                <div style="display:flex;gap:8px;justify-content:flex-end;">
+                  <button id="devGiveSCBtn" class="btn primary" style="min-width:86px;padding:6px 10px;">Give SC</button>
+                  <button id="devRemoveSCBtn" class="btn" style="min-width:86px;padding:6px 10px;background:linear-gradient(180deg,#ffefc8 0%,#ffd86b 100%);color:#2b1900;">Remove SC</button>
+                  <button id="devLogoutBtn" class="btn" style="min-width:86px;padding:6px 10px;background:linear-gradient(180deg,#ff6b6b 0%,#e04b4b 100%);color:#fff;">Lock</button>
+                </div>
+
+                <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:8px 0;" />
+
+                <label style="color:#cfe6ff;font-size:13px;">Grant Points (Score)</label>
+                <input id="devGrantPoints" type="number" min="0" value="100" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#eef6ff;" />
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px;">
+                  <button id="devGivePointsBtn" class="btn primary" style="min-width:86px;padding:6px 10px;">Give Points</button>
+                  <button id="devRemovePointsBtn" class="btn" style="min-width:86px;padding:6px 10px;background:linear-gradient(180deg,#ffefc8 0%,#ffd86b 100%);color:#2b1900;">Remove Points</button>
+                </div>
+
+                <div id="devMsg" style="color:#cfe6ff;font-size:13px;margin-top:6px;"></div>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button id="closeDevtools" class="btn">Close</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-highscore" id="menuHighScore">High Score: 0</div>
+        <!-- Achievements quick button (top of menu, green) -->
+        <div style="display:flex;justify-content:center;margin-bottom:8px;">
+          <button id="achievementsBtn" class="btn" style="min-width:160px;padding:8px 12px;border-radius:8px;background:linear-gradient(180deg,#7BE495 0%,#4CC67A 100%);color:#052814;font-weight:700;box-shadow:0 8px 30px rgba(76,198,122,0.18);">Achievements</button>
+        </div>
+        <h1>Cosmic Shooters</h1>
+        <p class="subtitle">Fly your ship blast rocks and enjoy the chaos — it's okay to make mistakes</p>
+        <div class="menu-buttons">
+          <button id="startBtn" class="btn primary">Start</button>
+          <button id="howBtn" class="btn">How to Play</button>
+          <button id="menuSettingsBtn" class="btn">Settings</button>
+          <button id="upgradesBtn" class="btn upgrades">Upgrades</button>
+          <button id="saveBtn" class="btn">Save</button>
+          <button id="loadBtn" class="btn">Load</button>
+
+          <!-- Named Saves Modal -->
+          <div id="namedSavesModal" class="modal" aria-hidden="true" style="z-index:1400;">
+            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="namedSavesTitle" style="max-width:520px;">
+              <h2 id="namedSavesTitle">Named Saves</h2>
+              <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <input id="newSaveName" type="text" placeholder="Save name..." style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#eef6ff;" />
+                  <button id="createSaveBtn" class="btn primary" style="min-width:96px;padding:8px 10px;">Create</button>
+                </div>
+                <div id="namedSavesList" style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto;padding-right:6px;">
+                  <!-- entries injected by JS -->
+                </div>
+                <div id="namedSavesHint" style="color:#cfe6ff;font-size:13px;">Create a named save, click Load to restore, or Delete to remove.</div>
+              </div>
+              <div class="modal-actions">
+                <button id="closeNamedSaves" class="btn">Close</button>
+              </div>
+            </div>
+          </div>
+          <button id="resetBtn" class="btn" style="background:linear-gradient(180deg,#ff6b6b 0%,#e04b4b 100%);color:#fff;font-weight:700;">Reset All Progress</button>
+        </div>
+        <p class="hint">WASD to move • Space to shoot • F to fire a rocket</p>
+      </div>
+    </div>
+
+    <!-- How to Play / Controls Modal -->
+    <div id="howModal" class="modal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="howTitle">
+        <h2 id="howTitle">How to Play & Controls</h2>
+        <div class="modal-body">
+          <div style="color:#ffffff;line-height:1.4;">
+            <h3 style="margin-top:0;color:#ffffff;font-size:16px;">Objective</h3>
+            <p>Survive waves of asteroids and enemies while maximizing your Points. Small asteroids = +20 Points; Big asteroids = +60 Points. Missed asteroids penalize Points (small −10, big −50).</p>
+
+            <h3 style="color:#ffffff;font-size:16px;margin-top:8px;">Core Controls</h3>
+            <ul style="color:#ffffff;">
+              <li><strong>Move:</strong> W A S D or Arrow keys — keep moving to avoid falling hazards.</li>
+              <li><strong>Rotate Aim:</strong> Q / E — rotate your ship to aim bullets and rockets independently from movement.</li>
+              <li><strong>Shoot:</strong> Space — primary weapon uses a clip; press <strong>R</strong> to manually reload or wait for auto-reload when empty.</li>
+              <li><strong>Rocket:</strong> F — fires a consumable rocket (destroys asteroids/does heavy enemy damage).</li>
+              <li><strong>Shield Toggle:</strong> 1 — toggle equipped shield (front or full-body) during a run.</li>
+            </ul>
+
+            <h3 style="color:#ffffff;font-size:16px;margin-top:8px;">Survival Tips</h3>
+            <ul style="color:#ffffff;">
+              <li>Use rotation (Q/E) to aim while strafing with WASD — this lets you dodge and shoot at once.</li>
+              <li>Rockets are scarce — save them for dense clusters or high-value enemies (frigates).</li>
+              <li>When shields are low, disengage and let them recharge; shields recharge after a short delay if not hit.</li>
+              <li>Collect ammo crates and health pickups by ramming them; crates top up reserve ammo, heals restore hull HP.</li>
+            </ul>
+
+            <h3 style="color:#ffffff;font-size:16px;margin-top:8px;">Upgrades & Currency</h3>
+            <ul style="color:#ffffff;">
+              <li><strong>Points ⇄ SC:</strong> Convert 100 Points → 1 SC in Upgrades; you can convert SC back (1 SC → 100 Points).</li>
+              <li>Spend SC on Front Shield, Full-Body Shield, Hull Reinforcement (+20 HP), Engine Tuning (+3 speed), Hull Reinforcement 2, and Rocket charges.</li>
+              <li>Some upgrades are universal (once bought they are available to all ships); others are per-ship—check the Ship modal.</li>
+            </ul>
+
+            <h3 style="color:#ffffff;font-size:16px;margin-top:8px;">Enemies at a Glance</h3>
+            <ul style="color:#ffffff;">
+              <li><strong>Scouts:</strong> Fast, fragile — avoid rams and pick them off.</li>
+              <li><strong>Fighters:</strong> Tougher, more damage — prioritize when grouped.</li>
+              <li><strong>Healers/Support:</strong> Heal nearby allies — take them out first to stop enemy sustain.</li>
+              <li><strong>Frigates:</strong> Heavy enemies with a strong shield and beam — strip shields before hitting hull.</li>
+            </ul>
+
+            <h3 style="color:#ffffff;font-size:16px;margin-top:8px;">Interface Quick Notes</h3>
+            <ul style="color:#ffffff;">
+              <li>Top-left: Hull Health bar. Top-right: Ammo and Rockets. Menu HUD shows Points and SC.</li>
+              <li>Achievements are claimable in the Achievements panel — unlocked achievements will show a Claim button.</li>
+              <li>Use the Ship modal to buy/select ships; purchases apply immediately if selected.</li>
+            </ul>
+
+            <p style="color:#cfe6ff;margin-top:8px;font-size:13px;">Tip: The in-game tutorial and encyclopedia provide deeper details — open them from the main menu when ready.</p>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="closeHow" class="btn primary">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tutorial Prompt Modal -->
+    <div id="tutorialPromptModal" class="modal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tutorialPromptTitle" style="max-width:520px;">
+        <h2 id="tutorialPromptTitle">Run Tutorial?</h2>
+        <div class="modal-body">
+          <p>Would you like to go through a quick tutorial that explains the controls, upgrades, shields, and scoring?</p>
+          <p style="font-size:13px;color:#cfe6ff;">You can skip it now and open it later from the How to Play menu.</p>
+        </div>
+        <div class="modal-actions" style="display:flex;gap:12px;justify-content:center;">
+          <button id="startTutorialBtn" class="btn primary">Yes — Show Tutorial</button>
+          <button id="skipTutorialBtn" class="btn">No — Skip</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tutorial Modal (multi-step) -->
+    <div id="tutorialModal" class="modal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle" style="max-width:640px;position:relative;">
+        <h2 id="tutorialTitle">Tutorial</h2>
+        <!-- Top-right red X close button -->
+        <button id="tutorialTopClose" class="btn" style="position:absolute;top:10px;right:10px;min-width:auto;padding:6px 8px;border-radius:8px;background:linear-gradient(180deg,#ff6b6b 0%,#e04b4b 100%);color:#fff;font-weight:700;cursor:pointer;">✕</button>
+        <div class="modal-body" id="tutorialBody" style="min-height:160px;">
+          <!-- content injected by JS -->
+        </div>
+        <div class="modal-actions" style="display:flex;gap:12px;justify-content:center;">
+          <button id="tutorialPrev" class="btn" style="display:none;">Prev</button>
+          <button id="tutorialNext" class="btn primary">Next</button>
+          <button id="tutorialClose" class="btn" style="display:none;">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <h2 id="settingsTitle">Settings</h2>
+        <div class="modal-body">
+          <div style="display:flex;align-items:center;gap:12px;justify-content:space-between;">
+            <div style="flex:1;">
+              <strong>Sound Effects</strong>
+              <div style="color:#cfe6ff;font-size:13px;margin-top:6px;">Toggle bullet sound effects</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <label for="sfxToggle" class="sfx-label" style="font-weight:600;">Off</label>
+              <input id="sfxToggle" class="settings-toggle" type="checkbox" role="switch" aria-checked="true" />
+              <label for="sfxToggle" class="sfx-label on-label" style="font-weight:600;">On</label>
+            </div>
+          </div>
+
+          <!-- Music volume slider -->
+          <div style="margin-top:12px; display:flex; gap:12px; align-items:center;">
+            <div style="flex:1;">
+              <strong>Menu Music Volume</strong>
+              <div style="color:#cfe6ff;font-size:13px;margin-top:6px;">Adjust volume for the main menu music</div>
+            </div>
+            <div style="width:240px; display:flex; align-items:center; gap:8px;">
+              <input id="musicVolume" type="range" min="0" max="100" value="40" style="width:180px;" />
+              <span id="musicVolumeLabel" style="width:36px;text-align:right;color:#eef6ff;font-weight:600;">40</span>
+            </div>
+          </div>
+
+
+        </div>
+        <div class="modal-actions">
+          <button id="closeSettings" class="btn primary">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upgrades Modal -->
+    <div id="upgradesModal" class="modal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="upgradesTitle">
+        <h2 id="upgradesTitle">Convert Points to SC</h2>
+        <div class="modal-body">
+          <p style="margin-bottom:8px;">Rate: 100 Score = 1 SC — simple and reversible.</p>
+
+          <!-- Per-ship upgrade selector -->
+          <div style="display:flex;gap:10px;margin:10px 0 8px;">
+            <button id="upgTabStarter" class="btn" style="background:#ffffff;color:#052814;font-weight:700;min-width:180px;">Starter Ship Upgrades</button>
+            <button id="upgTabCosmic" class="btn" style="background:#ffffff;color:#052814;font-weight:700;min-width:180px;">Cosmic Striker Upgrades</button>
+          </div>
+          <div id="upgradesTargetHint" style="color:#cfe6ff;font-size:13px;margin-bottom:8px;">Select which ship's upgrades to manage above.</div>
+
+          <!-- Front Shield (original) -->
+          <div style="display:flex;gap:12px;align-items:center;margin-top:6px;">
+            <button id="frontShieldIconBtn" style="background:transparent;border:none;padding:8px;border-radius:10px;cursor:pointer;flex-shrink:0;">
+              <img src="shield 1.png" alt="Front Shield" style="width:56px;height:56px;image-rendering:pixelated;" />
+            </button>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <strong>Front Shield</strong>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span id="frontShieldPrice" style="color:#ffd86b;font-weight:700;">10 SC</span>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <button id="frontShieldBuyBtn" class="btn" style="min-width:86px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#7BE495 0%,#4CC67A 100%);color:#052814;font-weight:600;">Buy</button>
+                    <button id="frontShieldEquipBtn" class="btn" style="min-width:86px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Equip</button>
+                  </div>
+                </div>
+              </div>
+              <div id="frontShieldDesc" style="color:#cfe6ff;font-size:13px;margin-top:8px;display:none;">
+                A nose-mounted shield that absorbs damage from frontal impacts only. 50 HP; toggled with key "1" when equipped; depletes and then slowly recharge after a short delay. <strong>Note:</strong> Front Shields are universal — once purchased they are unlocked globally and available for all ships (no need to buy again per ship).
+              </div>
+            </div>
+          </div>
+
+          <!-- Full-Body Shield -->
+          <div style="display:flex;gap:12px;align-items:center;margin-top:12px;">
+            <button id="shieldIconBtn" style="background:transparent;border:none;padding:8px;border-radius:10px;cursor:pointer;flex-shrink:0;">
+              <!-- Use a styled yellow circle to match the in-game full-body shield visual -->
+              <span class="full-shield-icon" aria-hidden="true"></span>
+            </button>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <strong>Full-Body Shield</strong>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span id="shieldPrice" style="color:#ffd86b;font-weight:700;">30 SC</span>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <button id="shieldBuyBtn" class="btn" style="min-width:86px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#7BE495 0%,#4CC67A 100%);color:#052814;font-weight:600;">Buy</button>
+                    <button id="shieldEquipBtn" class="btn" style="min-width:86px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Equip</button>
+                  </div>
+                </div>
+              </div>
+              <div id="shieldDesc" style="color:#cfe6ff;font-size:13px;margin-top:8px;display:none;">
+                Purchase a full-body shield that covers the ship on all sides. 100 HP; toggled with key "1" when equipped; protects from any direction and recharges slowly when offline. <strong>Note:</strong> Full-Body Shields are universal — once purchased they are unlocked globally and available for all ships (no need to buy again per ship).
+              </div>
+            </div>
+          </div>
+
+          <!-- Hull Upgrade (adds +20 max HP) -->
+          <div style="display:flex;gap:12px;align-items:center;margin-top:12px;">
+            <button id="hullIconBtn" style="background:transparent;border:none;padding:6px;border-radius:10px;cursor:pointer;flex-shrink:0;">
+              <img src="Main Ship - Base - Full health.png" alt="Hull Upgrade" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);" />
+            </button>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <strong>Hull Reinforcement</strong>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span id="hullPrice" style="color:#ffd86b;font-weight:700;">20 SC</span>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <button id="hullBuyBtn" class="btn" style="min-width:86px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#7BE495 0%,#4CC67A 100%);color:#052814;font-weight:600;">Buy</button>
+                  </div>
+                </div>
+              </div>
+              <div id="hullDesc" style="color:#cfe6ff;font-size:13px;margin-top:8px;">
+                Reinforce your hull to increase maximum hull HP by +20 permanently. Increases survivability vs rams and bullets. Costs 20 SC. Purchasing this unlocks Hull Reinforcement 2 (adds +40 max HP) which will become available for 35 SC.
+              </div>
+            </div>
+          </div>
+
+          <!-- Hull Reinforcement 2 (locked until first hull reinforcement is purchased) -->
+          <div style="display:flex;gap:12px;align-items:center;margin-top:12px;">
+            <button id="hull2IconBtn" style="background:transparent;border:none;padding:6px;border-radius:10px;cursor:pointer;flex-shrink:0;">
+              <img src="Main Ship - Base - Full health.png" alt="Hull Reinforcement 2" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);" />
+            </button>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <strong>Hull Reinforcement 2</strong>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span id="hull2Price" style="color:#ffd86b;font-weight:700;">Locked</span>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <button id="hull2BuyBtn" class="btn" style="min-width:86px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#7BE495 0%,#4CC67A 100%);color:#052814;font-weight:600;display:none;">Buy</button>
+                  </div>
+                </div>
+              </div>
+              <div id="hull2Desc" style="color:#cfe6ff;font-size:13px;margin-top:8px;display:none;">
+                Powerful hull reinforcement that increases maximum hull HP by +40 permanently. Costs 35 SC. Requires purchasing Hull Reinforcement first to unlock.
+              </div>
+            </div>
+          </div>
+
+          <!-- Speed Upgrade (+3 speed, permanent) -->
+          <div style="display:flex;gap:12px;align-items:center;margin-top:12px;">
+            <button id="speedIconBtn" style="background:transparent;border:none;padding:6px;border-radius:10px;cursor:pointer;flex-shrink:0;">
+              <!-- simple styled chevron / speed icon -->
+              <span style="display:inline-block;width:56px;height:56px;border-radius:6px;background:linear-gradient(180deg,#dff6ff 0%,#bfefff 100%);box-shadow:inset 0 -6px 10px rgba(0,0,0,0.04);"></span>
+            </button>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <strong>Engine Tuning</strong>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span id="speedPrice" style="color:#ffd86b;font-weight:700;">10 SC</span>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <button id="speedBuyBtn" class="btn" style="min-width:86px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#7BE495 0%,#4CC67A 100%);color:#052814;font-weight:600;">Buy</button>
+                  </div>
+                </div>
+              </div>
+              <div id="speedDesc" style="color:#cfe6ff;font-size:13px;margin-top:8px;">
+                Permanently increases your ship's speed by +3. Costs 10 SC and applies immediately to current and future runs.
+              </div>
+            </div>
+          </div>
+
+          <!-- Rocket Upgrade (consumable offensive item) -->
+          <div style="display:flex;gap:12px;align-items:center;margin-top:12px;">
+            <button id="rocketIconBtn" style="background:transparent;border:none;padding:6px;border-radius:10px;cursor:pointer;flex-shrink:0;">
+              <img src="rocket upgrade.png" alt="Rocket Upgrade" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);" />
+            </button>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <strong>Rocket Upgrade</strong>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span id="rocketPrice" style="color:#ffd86b;font-weight:700;">5 SC / piece</span>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <input id="rocketAmount" type="number" min="1" value="1" style="width:72px;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#eef6ff;text-align:center;" />
+                    <button id="rocketBuyBtn" class="btn" style="min-width:86px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#7BE495 0%,#4CC67A 100%);color:#052814;font-weight:600;">Buy</button>
+                  </div>
+                </div>
+              </div>
+              <div id="rocketDesc" style="color:#cfe6ff;font-size:13px;margin-top:8px;">
+                Purchase consumable rocket charges (max carry 100). Each rocket costs 5 SC; rockets deal 25 damage to shields and 30 damage to hull when used and will also destroy asteroids in a single hit.
+              </div>
+            </div>
+          </div>
+
+          <!-- Score -> SC conversion -->
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+            <input id="convertAmount" type="number" min="0" placeholder="Score to convert" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#eef6ff;" />
+            <button id="convertBtn" class="btn primary" style="min-width:110px;padding:8px 12px;">Convert</button>
+          </div>
+          <p id="convertHint" style="margin-top:4px;color:#cfe6ff;font-size:13px;">Type how many Points you'd like to convert — 100 Points = 1 SC.</p>
+
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:12px 0;" />
+
+          <!-- SC -> Score conversion (reverse) -->
+          <p style="margin:6px 0 8px;">Reverse: 1 SC = 100 Score</p>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="convertSCAmount" type="number" min="0" placeholder="SC to convert" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#eef6ff;" />
+            <button id="convertSCBtn" class="btn" style="min-width:110px;padding:8px 12px;background:linear-gradient(180deg,#2fd1ff 0%,#1bb0e6 100%);color:#022032;">Convert SC</button>
+          </div>
+          <p id="convertSCHint" style="margin-top:10px;color:#cfe6ff;font-size:13px;">Enter how many SC you want to convert back into Points (1 SC = 100 Points).</p>
+        </div>
+        <div class="modal-actions">
+          <button id="closeUpgrades" class="btn" style="background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Achievements Modal (yellow background) -->
+    <div id="achievementsModal" class="modal" aria-hidden="true" style="z-index:1300;">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="achTitle" style="max-width:520px;background:linear-gradient(180deg,#fff5cc 0%,#ffef99 100%);color:#2b2b2b;">
+        <h2 id="achTitle" style="text-align:center;margin-top:0;color:#2b2b2b;">Achievements</h2>
+        <div style="display:flex;justify-content:center;gap:8px;margin-bottom:10px;">
+          <button id="achCatAll" class="btn" style="min-width:86px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#fff 0%,#f0f0f0 100%);color:#222;font-weight:700;">All</button>
+          <button id="achCatPoints" class="btn" style="min-width:86px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;">Points</button>
+          <button id="achCatUpgrades" class="btn" style="min-width:86px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#7BE495 0%,#4CC67A 100%);color:#052814;font-weight:700;">Upgrades</button>
+          <button id="achCatEnemies" class="btn" style="min-width:86px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#2fd1ff 0%,#1bb0e6 100%);color:#022032;font-weight:700;">Enemies</button>
+        </div>
+        <div class="modal-body" style="color:#000000;">
+          <p style="margin:6px 0 8px 0;color:#000000;">This is your Achievements panel. It'll list unlocked achievements here.</p>
+          <div id="achList" style="display:flex;flex-direction:column;gap:10px;">
+            <!-- PS1 achievement row -->
+            <div id="ach-ps1" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-ps1-img" src="ps 1 .png" alt="PS1" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">PS1</div>
+                <div id="ach-ps1-short" style="font-size:13px;color:#333;">Reach 500 Points to unlock. Reward: 2 SC.</div>
+                <div id="ach-ps1-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  phew you got out of the boring phase get ready for some ENEMIES !!
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-ps1-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimPS1Btn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- PS2 achievement row -->
+            <div id="ach-ps2" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-ps2-img" src="ps 2.png" alt="PS2" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">PS2</div>
+                <div id="ach-ps2-short" style="font-size:13px;color:#333;">Reach 1000 Points to unlock. Reward: 5 SC.</div>
+                <div id="ach-ps2-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  So I may have underestimated you BUT dont get slacking.
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-ps2-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimPS2Btn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- PS3 achievement row -->
+            <div id="ach-ps3" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-ps3-img" src="ps 3.png" alt="PS3" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">PS3</div>
+                <div id="ach-ps3-short" style="font-size:13px;color:#333;">Reach 2500 Points to unlock. Reward: 15 SC.</div>
+                <div id="ach-ps3-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  wow you might be actually good  well let me throw something even harder.
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-ps3-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimPS3Btn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- First Scout Kill achievement row -->
+            <div id="ach-scout" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-scout-img" src="Nairan - Scout - Base.png" alt="First Scout Kill" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">First Scout Kill</div>
+                <div id="ach-scout-short" style="font-size:13px;color:#333;">Kill your first Scout enemy. Reward: 3 SC.</div>
+                <div id="ach-scout-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  woah you killed your first enemy but dont worry that just an scout
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-scout-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimScoutBtn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- Pew Pew achievement row (new) -->
+            <div id="ach-pew" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-pew-img" src="asset.png" alt="Pew Pew" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">Pew Pew</div>
+                <div id="ach-pew-short" style="font-size:13px;color:#333;">Shoot down your first Asteroid. Reward: 1 SC.</div>
+                <div id="ach-pew-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  nice your first asteroid destroyed many more to come
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-pew-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimPewBtn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- First Fighter Kill achievement row -->
+            <div id="ach-fighter" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-fighter-img" src="Nairan - Fighter - Base.png" alt="First Fighter Kill" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">First Fighter Kill</div>
+                <div id="ach-fighter-short" style="font-size:13px;color:#333;">Kill your first Fighter enemy. Reward: 3 SC.</div>
+                <div id="ach-fighter-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  cmon man that was an perfectly good fighter why you detroy it
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-fighter-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimFighterBtn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- First Frigate Kill achievement row (new) -->
+            <div id="ach-frigate" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-frigate-img" src="Nairan - Frigate - Base.png" alt="First Frigate Kill" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">First Frigate Kill</div>
+                <div id="ach-frigate-short" style="font-size:13px;color:#333;">Kill your first Frigate enemy. Reward: 50 SC.</div>
+                <div id="ach-frigate-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  WHYYYYYYYYYYYYY MY BELOVED
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-frigate-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimFrigateBtn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- Terminator achievement row (new) -->
+            <div id="ach-terminator" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-terminator-img" src="first frigate kill.png" alt="Terminator" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">Terminator</div>
+                <div id="ach-terminator-short" style="font-size:13px;color:#333;">Kill 10 Frigates. Reward: 120 SC.</div>
+                <div id="ach-terminator-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  NOOO MY BABIES. YOU WILL PAY!!!!
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-terminator-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimTerminatorBtn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- First Support (Healer) Kill achievement row -->
+            <div id="ach-support" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-support-img" src="Nairan - Support Ship - Base.png" alt="First Support Kill" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">First Support Kill</div>
+                <div id="ach-support-short" style="font-size:13px;color:#333;">Kill your first Support (Healer) enemy. Reward: 4 SC.</div>
+                <div id="ach-support-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  why you destroyed that it wasnt even hurting you, you are an war criminal
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-support-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimSupportBtn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- Upgraded — First Upgrade achievement row (shows the "UP" icon and claim UI) -->
+            <div id="ach-up-first" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-up-first-img" src="up 1 .png" alt="First Upgrade" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">Upgraded — First Upgrade</div>
+                <div id="ach-up-first-short" style="font-size:13px;color:#333;">Buy your first permanent upgrade or consumable. Reward: 2 SC.</div>
+                <div id="ach-up-first-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  well i see your ship is stronger
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-up-first-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimUpFirstBtn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- PS4 achievement row -->
+            <div id="ach-ps4" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-ps4-img" src="ps 4.png" alt="PS4" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">PS4</div>
+                <div id="ach-ps4-short" style="font-size:13px;color:#333;">Reach 5000 Points to unlock. Reward: 30 SC.</div>
+                <div id="ach-ps4-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  WOAH your an pro! i got to up my game.
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-ps4-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimPS4Btn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- PS5 achievement row -->
+            <div id="ach-ps5" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-ps5-img" src="ps 5 .png" alt="PS5" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">PS5</div>
+                <div id="ach-ps5-short" style="font-size:13px;color:#333;">Reach 8000 Points to unlock. Reward: 50 SC.</div>
+                <div id="ach-ps5-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  WHY JUST LOSE BRO GIVE UP YOU WILL NEVER HIT THE END !!
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-ps5-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimPS5Btn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- PS6 achievement row (new) -->
+            <div id="ach-ps6" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-ps6-img" src="ps 6 .png" alt="PS6" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">PS6</div>
+                <div id="ach-ps6-short" style="font-size:13px;color:#333;">Reach 10000 Points to unlock. Reward: +55 Points when claimed.</div>
+                <div id="ach-ps6-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  TURN BACK NOW !
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-ps6-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimPS6Btn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- Hunter Killer achievement row (new) -->
+            <div id="ach-hunter" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-hunter-img" src="hunter killer achievment.png" alt="Hunter Killer" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">Hunter Killer</div>
+                <div id="ach-hunter-short" style="font-size:13px;color:#333;">Kill 30 Scouts and 30 Fighters. Reward: 40 SC.</div>
+                <div id="ach-hunter-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  STOP KILLING MY SHIPS STOP!
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-hunter-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimHunterBtn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- Cosmic Striker purchase achievement (new) -->
+            <div id="ach-cosmic" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-cosmic-img" src="ship 2 cosmic shooters.png" alt="Cosmic Striker" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">Cosmic Striker Purchase</div>
+                <div id="ach-cosmic-short" style="font-size:13px;color:#333;">Buy the Cosmic Striker ship. Reward: 100 SC.</div>
+                <div id="ach-cosmic-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  eyyy where did you get that!!
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-cosmic-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimCosmicBtn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- No Mercy for Healers achievement row (new) -->
+            <div id="ach-no-mercy" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-no-mercy-img" src="no mercy for healers achievment.png" alt="No Mercy for Healers" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">No Mercy for Healers</div>
+                <div id="ach-no-mercy-short" style="font-size:13px;color:#333;">Kill 30 Support (Healer) enemies. Reward: 30 SC.</div>
+                <div id="ach-no-mercy-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  WHYYY YOU JUST BROKE THE COSMIC CONVENTIONS
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-no-mercy-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimNoMercyBtn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+
+            <!-- Hull Reinforcement II achievement row (new) -->
+            <div id="ach-hull2" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+              <img id="ach-hull2-img" src="Hull reinforcment 2.png" alt="Hull Reinforcement II" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#2b2b2b;">Hull Reinforcement II</div>
+                <div id="ach-hull2-short" style="font-size:13px;color:#333;">Buy Hull Reinforcement 2. Reward: 60 SC.</div>
+                <div id="ach-hull2-desc" style="display:none;margin-top:6px;font-size:13px;color:#111;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;">
+                  woah dont upgrade the hull to much, how will i destroy you
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <div id="ach-hull2-status" class="status-pill" style="display:inline-block;background:rgba(0,0,0,0);color:#076a2f;padding:6px 8px;border-radius:8px;font-weight:700;font-size:12px;">Locked</div>
+                <button id="claimHull2Btn" class="btn" style="min-width:96px;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;font-weight:700;display:none;">Claim</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions" style="display:flex;gap:12px;justify-content:center;">
+          <button id="closeAchievements" class="btn primary" style="background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pause Menu (opened by Escape while playing) -->
+    <div id="pauseMenu" class="pause-modal" aria-hidden="true">
+      <div class="pause-card" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+        <h2 id="pauseTitle">Paused</h2>
+
+        <!-- Vertical main list -->
+        <div class="pause-list">
+          <p class="pause-note">Game is paused. Resume, review controls, or quit.</p>
+
+          <!-- Vertical buttons (main actions) -->
+          <div class="pause-body" id="pauseBody">
+            <button id="pauseHowBtn" class="btn">How to Play</button>
+            <button id="pauseSettingsBtn" class="btn">Settings</button>
+          </div>
+
+          <!-- Small horizontal row for quick actions -->
+          <div class="pause-row" role="group" aria-label="pause actions" id="pauseRow">
+            <button id="pauseResumeBtn" class="btn resume">Resume</button>
+            <button id="pauseQuitBtn" class="btn quit">Quit</button>
+          </div>
+
+          <!-- In-pause confirm panel (hidden until user clicks Quit) -->
+          <div id="pauseConfirm" style="display:none; margin-top:10px; text-align:center;">
+            <p style="margin:8px 0; color:#ffd6d6;">Are you sure you want to quit the current run?</p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+              <button id="confirmQuitBtn" class="btn" style="background:linear-gradient(180deg,#ff6b6b 0%,#e04b4b 100%); color:#fff;">Confirm Quit</button>
+              <button id="cancelQuitBtn" class="btn" style="background:linear-gradient(180deg,#7BE495 0%,#4CC67A 100%); color:#052814;">Cancel</button>
+            </div>
+          </div>
+
+          <!-- Post-quit small in-pause menu (stays in overlay, not the main menu) -->
+          <div id="pauseStoppedMenu" style="display:none; margin-top:12px; text-align:center;">
+            <p style="margin:8px 0; color:#dfe6ff;">You have quit the run. This is an in-pause menu.</p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+              <button id="stoppedRestartBtn" class="btn primary">Restart Run</button>
+              <button id="stoppedBackToPauseBtn" class="btn">Back to Pause</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Reset confirmation modal -->
+    <div id="resetModal" class="modal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="resetTitle" style="max-width:420px;">
+        <h2 id="resetTitle">Reset All Progress?</h2>
+        <div class="modal-body">
+          <p>This will permanently clear your saved SC, high score, music volume, and inventory. Your current run will be stopped. This action cannot be undone.</p>
+        </div>
+        <div class="modal-actions" style="gap:12px;">
+          <button id="confirmResetBtn" class="btn" style="background:linear-gradient(180deg,#ff6b6b 0%,#e04b4b 100%);color:#fff;">Accept</button>
+          <button id="cancelResetBtn" class="btn primary">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom-center quick actions: Encyclopedia + Ship -->
+    <div id="bottomQuickActions" style="position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:250;display:flex;gap:10px;align-items:center;">
+      <button id="encyclopediaBtn" class="btn" style="background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;padding:10px 14px;border-radius:10px;font-weight:700;box-shadow:0 8px 30px rgba(255,200,60,0.16);">Encyclopedia</button>
+      <button id="shipBtn" class="btn" aria-haspopup="dialog" style="background:linear-gradient(180deg,#ffd86b 0%,#f6d35a 100%);color:#2b1900;padding:10px 14px;border-radius:10px;font-weight:700;box-shadow:0 8px 30px rgba(255,200,60,0.16);">Ship</button>
+    </div>
+
+    <!-- Encyclopedia (book-style) modal -->
+    <div id="encyclopediaModal" class="modal" aria-hidden="true" style="z-index:1300;">
+      <div class="modal-card encyclopedia-card" role="dialog" aria-modal="true" aria-labelledby="encyTitle" style="width:min(760px,92vw);max-width:760px;">
+        <h2 id="encyTitle" style="text-align:center;margin-top:0;">Encyclopedia</h2>
+        <div id="encyPages" style="display:flex;align-items:stretch;gap:12px;">
+          <!-- Left page (contents) -->
+          <div class="book-page" id="encyPageLeft" style="flex:1;padding:18px;background:linear-gradient(180deg,#f7f3ea 0%,#efe9d6 100%);border-radius:8px;min-height:300px;">
+            <h3 style="margin-top:0;color:#2b2b2b;">Contents</h3>
+            <ul style="color:#333;">
+              <li>Page 1 — Scout</li>
+              <li>Page 2 — Fighter</li>
+              <li>Page 3 — Support Healer</li>
+              <li>Page 4 — Frigate</li>
+              <li>Page 5 — Engine Tuning</li>
+              <li>Page 6 — Upgrades (Shields & Hull)</li>
+              <li>Page 7 — Front Shield (detailed)</li>
+              <li>Page 8 — Full-Body Shield (detailed)</li>
+              <li>Page 9 — Hull Reinforcement (detailed)</li>
+              <li>Page 10 — Rocket Upgrade</li>
+              <li>Page 11 — Hull Reinforcement 2 (requirements)</li>
+            </ul>
+            <p style="color:#333;font-size:13px;margin-top:8px;">Click arrows to flip pages. Close with the Close button or click outside.</p>
+          </div>
+          <!-- Right page (dynamic) -->
+          <div class="book-page" id="encyPageRight" style="flex:1;padding:18px;background:linear-gradient(180deg,#fffef8 0%,#f9f6ec 100%);border-radius:8px;min-height:300px;">
+            <!-- content injected by JS -->
+          </div>
+        </div>
+
+        <!-- pagination controls -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;">
+          <button id="encyPrev" class="btn" style="min-width:86px;padding:8px 12px;border-radius:8px;background:linear-gradient(180deg,#2fd1ff 0%,#1bb0e6 100%);color:#022032;font-weight:700;">◀ Prev</button>
+          <div id="encyPageIndicator" style="color:#000000;background:#ffffff;padding:6px 10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);font-weight:700;">Page 1 / 6</div>
+          <button id="encyNext" class="btn" style="min-width:86px;padding:8px 12px;border-radius:8px;background:linear-gradient(180deg,#7BE495 0%,#4CC67A 100%);color:#052814;font-weight:700;">Next ▶</button>
+        </div>
+
+        <div class="modal-actions" style="margin-top:12px;">
+          <button id="closeEncy" class="btn primary">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ship modal (shows current craft stats, icon and description) -->
+  <div id="shipModal" class="modal" aria-hidden="true" style="z-index:1300;">
+    <div class="modal-card encyclopedia-card" role="dialog" aria-modal="true" aria-labelledby="shipTitle" style="width:min(560px,92vw);max-width:560px;">
+      <h2 id="shipTitle" style="text-align:center;margin-top:0;">Ship</h2>
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-top:8px;">
+        <div style="width:140px;flex-shrink:0;text-align:center;">
+          <img id="shipIcon" src="Main Ship - Base - Full health.png" alt="Ship Icon" style="width:120px;height:120px;image-rendering:pixelated;display:block;margin:0 auto;border-radius:6px;border:1px solid rgba(0,0,0,0.06);" />
+        </div>
+        <div style="flex:1;">
+          <!-- dynamic per-ship title is handled by #shipTitle (h2 above); per-ship description inserted below -->
+          <div style="background:rgba(0,0,0,0.03);padding:8px;border-radius:6px;">
+            <div style="color:#222;margin-bottom:6px;"><strong>HP:</strong> <span id="shipHp">100</span></div>
+            <div style="color:#222;margin-bottom:6px;"><strong>Speed:</strong> <span id="shipSpeed">7</span></div>
+            <div style="color:#222;margin-bottom:6px;"><strong>Armor:</strong> <span id="shipArmor">0</span></div>
+            <div id="shipDesc" style="color:#222;margin-top:6px;"><strong>Description:</strong> <span id="shipDescText">an upgraded ship with more durability and speed for more advanced pilots.</span></div>
+          </div>
+
+          <!-- Upgrades summary for the current ship: owned upgrades are highlighted in green -->
+          <div style="margin-top:10px;">
+            <h4 style="margin:8px 0 6px 0;color:#2b2b2b;">Upgrades</h4>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="upgrade-item" id="shipUpgradeFront">Front Shield — Nose-mounted (50 HP)</div>
+              <div class="upgrade-item" id="shipUpgradeFull">Full-Body Shield — Omnidirectional (100 HP)</div>
+              <div class="upgrade-item" id="shipUpgradeHull">Hull Reinforcement — +20 max HP</div>
+              <div class="upgrade-item" id="shipUpgradeHull2">Hull Reinforcement 2 — Locked (requires Hull Reinforcement)</div>
+              <div class="upgrade-item" id="shipUpgradeSpeed">Engine Tuning — +3 Speed</div>
+              <div class="upgrade-item" id="shipUpgradeRocket">Rocket Upgrade — x0 owned</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:center;">
+        <button id="shipPrevBtn" class="btn" style="min-width:86px;padding:8px 12px;border-radius:8px;background:linear-gradient(180deg,#2fd1ff 0%,#1bb0e6 100%);color:#022032;font-weight:700;">◀ Prev</button>
+        <button id="shipNextBtn" class="btn" style="min-width:86px;padding:8px 12px;border-radius:8px;background:linear-gradient(180deg,#7BE495 0%,#4CC67A 100%);color:#052814;font-weight:700;">Next ▶</button>
+        <button id="selectShipBtn" class="btn primary">Select</button>
+        <button id="buyShipBtn" class="btn" style="background:linear-gradient(180deg,#ffd86b 0%,#ffc107 100%);color:#2b1900;">Buy</button>
+        <button id="closeShip" class="btn primary">Close</button>
+      </div>
+    </div>
+  </div>
+        </div>
+      </div>
+    </div>
+
+    <canvas id="gameCanvas" width="1400" height="820"></canvas>
+    <!-- load the game via script.js (which imports main.js) to avoid double-loading main.js -->
+    <script type="module" src="script.js"></script>
+  </body>
+</html>

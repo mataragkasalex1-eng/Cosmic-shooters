@@ -1,0 +1,20 @@
+{
+  "name": "cosmic-shooters",
+  "version": "0.4.2.2",
+  "description": "Cosmic Shooters — lightweight browser game packaged for local serving.",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "start": "serve -s . -l 8080",
+    "serve": "serve -s . -l 8080",
+    "dev": "npx serve -s . -l 8080"
+  },
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  },
+  "devDependencies": {
+    "serve": "^14.0.1"
+  }
+}
