@@ -133,7 +133,7 @@ let enemies = [];
 let asteroidsDestroyed = 0;
 
   // Achievements registry
- const achievements = {
+ let achievements = {
    ps1: {
      id: "ps1",
      name: "PS1",
